@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # Traefik reverse proxy service
+  traefik:
+    image: traefik:v2.9
+    container_name: traefik
+    command:
+      - "--api.insecure=true" # For production, secure the dashboard properly
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - traefik-public
+
+  # MT5 Container for Account 1
+  mt5_account1:
+    build: .
+    container_name: mt5_account1
+    environment:
+      - CUSTOM_USER=admin1
+      - PASSWORD=${MT5_PASSWORD_ACCOUNT1}
+      - VNC_PASSWORD=${VNC_PASSWORD_ACCOUNT1}
+    ports:
+      - "5901:5900"  # Map container VNC port to host port 5901
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mt5_account1.rule=Host(`vnc1.${VNC_DOMAIN}`)"
+      - "traefik.http.routers.mt5_account1.entrypoints=websecure"
+      - "traefik.http.routers.mt5_account1.tls.certresolver=myresolver"
+    networks:
+      - traefik-public
+
+  # MT5 Container for Account 2
+  mt5_account2:
+    build: .
+    container_name: mt5_account2
+    environment:
+      - CUSTOM_USER=admin2
+      - PASSWORD=${MT5_PASSWORD_ACCOUNT2}
+      - VNC_PASSWORD=${VNC_PASSWORD_ACCOUNT2}
+    ports:
+      - "5902:5900"  # Map container VNC port to host port 5902
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mt5_account2.rule=Host(`vnc2.${VNC_DOMAIN}`)"
+      - "traefik.http.routers.mt5_account2.entrypoints=websecure"
+      - "traefik.http.routers.mt5_account2.tls.certresolver=myresolver"
+    networks:
+      - traefik-public
+
+networks:
+  traefik-public:
+    external: true
