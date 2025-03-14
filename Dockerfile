@@ -11,7 +11,7 @@ RUN apt-get install -y \
     wine wine32 xvfb x11vnc fluxbox wget openssl sudo
 
 # Download and install MetaTrader 5 (update the URL and silent flags as needed)
-RUN wget -O /tmp/mt5setup.exe "https://download-link-for-mt5/setup.exe" && \
+RUN wget -O /tmp/mt5setup.exe "https://download.metatrader5.com/setup.exe" && \
     xvfb-run wine /tmp/mt5setup.exe /S && \
     rm /tmp/mt5setup.exe
 
